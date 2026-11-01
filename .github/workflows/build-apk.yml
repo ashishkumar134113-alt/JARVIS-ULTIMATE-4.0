@@ -1,53 +1,16 @@
-name: Build JARVIS Ultimate APK
-
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Extract Android Project
+   - name: Extract Android Project
         run: |
           mkdir -p android-project
-          ZIP_FILE=$(find . -maxdepth 1 -name '*.zip' | head -n 1)
+
+          echo "Checking repository files..."
+          find . -maxdepth 4 -type f
+
+          ZIP_FILE=$(find . -type f -iname '*.zip' | head -n 1)
+
           if [ -z "$ZIP_FILE" ]; then
-            echo "Android project ZIP not found"
+            echo "ERROR: Android ZIP not found!"
             exit 1
           fi
+
+          echo "Found ZIP: $ZIP_FILE"
           unzip -q "$ZIP_FILE" -d android-project
-
-      - name: Find Gradle Project
-        run: |
-          GRADLE_FILE=$(find android-project -name gradlew -type f | head -n 1)
-          if [ -z "$GRADLE_FILE" ]; then
-            echo "gradlew not found in ZIP"
-            exit 1
-          fi
-          echo "PROJECT_DIR=$(dirname "$GRADLE_FILE")" >> $GITHUB_ENV
-
-      - name: Build Debug APK
-        run: |
-          cd "$PROJECT_DIR"
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: JARVIS-ULTIMATE-APK
-          path: android-project/**/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
